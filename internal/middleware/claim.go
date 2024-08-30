@@ -1,4 +1,4 @@
-package authen
+package middleware
 
 import (
 	"crypto/rsa"
@@ -16,6 +16,7 @@ import (
 
 const (
 	claimKey      = "claim"
+	userKey       = "user"
 	tokenClaimKey = "X"
 )
 
@@ -63,6 +64,7 @@ func DecryptClaimToken(c *gin.Context) bool {
 		return false
 	}
 	c.Set(claimKey, *myClaim)
+	c.Set(userKey, &myClaim.Username)
 	return true
 }
 

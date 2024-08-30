@@ -62,7 +62,7 @@ func Validate(c *gin.Context, envFile map[string]string) error {
 		return errors.New(unAuthorized)
 	}
 
-	valid := DecryptClaimToken(c, envFile)
+	valid := DecryptClaimToken(c)
 	if !valid {
 		// c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return errors.New(unAuthorized)

@@ -1,33 +1,50 @@
 package main
 
 import (
-	"demo/authen"
+	"context"
+	"demo/internal/middleware"
+	"fmt"
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
+	"github.com/lestrrat-go/jwx/jwk"
 )
 
-func middlerware(envFile map[string]string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		err := authen.Validate(c, envFile)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-			return
-		}
-		c.Next()
-	}
-}
+// func myMiddleware(envFile map[string]string) gin.HandlerFunc {
+// 	return func(c *gin.Context) {
+// 		err := authen.Validate(c, envFile)
+// 		if err != nil {
+// 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+// 			return
+// 		}
+// 		c.Next()
+// 	}
+// }
 
 func main() {
-	r := gin.Default()
-	envFile, _ := godotenv.Read(".env")
+	r := gin.New()
+
+	// Fetch the JWK from the URI
+	keySet, err := jwk.Fetch(context.Background(),
+		fmt.Sprintf("%s/%s/%s/discovery/v2.0/keys",
+			os.Getenv("AZURE_INSTANCE"),
+			os.Getenv("AZURE_DOMAIN"),
+			os.Getenv("AZURE_TENANT")))
+	if err != nil {
+		log.Fatalf("failed to fetch JWK: %s", err)
+	}
+
+	r.Use(middleware.DefaultStructuredLogger())
+	r.Use(gin.Recovery())
+	r.SetTrustedProxies(nil)
 	login := r.Group("/authen")
-	login.Use(middlerware(envFile))
+	login.Use(middleware.Authenticator(keySet))
 	{
 		login.GET("/login", func(c *gin.Context) {
-			claim, _ := authen.GetClaim(c)
-			c.String(http.StatusOK, claim.Username)
+			claim, _ := middleware.GetClaim(c)
+			c.String(http.StatusInternalServerError, claim.Username)
 		})
 	}
 	r.GET("/ping", func(c *gin.Context) {
