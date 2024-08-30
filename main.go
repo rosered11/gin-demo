@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"demo/internal/middleware"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 
+	"dev.azure.com/tms-public/library/_git/tmscore.git/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/lestrrat-go/jwx/jwk"
 )
